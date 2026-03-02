@@ -1,30 +1,32 @@
 import { useState } from 'react'
-import { Info, X, Zap, ArrowRight, Pencil, Headphones, Clock, MessageCircle, Server, Shield, Search, Gauge, Lock, Globe, Phone, Sparkles, Check, Minus } from 'lucide-react'
+import { Info, X, Zap, ArrowRight, Pencil, Headphones, Clock, MessageCircle, Server, Shield, Search, Gauge, Lock, Globe, Mail, Check, Minus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { BorderBeam } from '@/components/magicui/border-beam'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
+import { AnimatedShinyText } from '@/components/magicui/animated-shiny-text'
 import { DotPattern } from '@/components/magicui/dot-pattern'
 import { cn } from '@/lib/utils'
 
 const ACCENT = '#f4bc17'
 const ACCENT_RGB = '244,188,23'
-const CHECKOUT_URL = 'https://vnckxwbzbmtdqsvgrnfg.supabase.co/functions/v1/create-checkout?submission_id=c4ead5d2-ed8c-41cd-88e3-77fadabc960f'
+const CHECKOUT_URL = 'https://vnckxwbzbmtdqsvgrnfg.supabase.co/functions/v1/create-checkout'
+const SUBMISSION_ID = 'c4ead5d2-ed8c-41cd-88e3-77fadabc960f'
 
 const features = [
   { label: 'Included monthly editing hours', starter: '2h edits included', growth: '4h edits included', icon: Pencil },
-  { label: 'Extra editing hours', starter: '45€/hr', growth: '40€/hr', icon: Clock },
+  { label: 'Extra hours', starter: '45€/hr extra', growth: '40€/hr extra', icon: Clock },
   { label: 'Support hours', starter: '10:00 - 18:00', growth: '24/7', icon: Headphones },
   { label: 'Response time', starter: 'Max 24h', growth: 'Priority', icon: Clock },
-  { label: 'WhatsApp & direct calls', starter: false, growth: true, icon: MessageCircle },
   { label: 'High-speed premium hosting', starter: 'Performant hosting', growth: true, icon: Server },
   { label: '24/7 security monitoring', starter: true, growth: true, icon: Shield },
   { label: 'SEO scan & health check', starter: true, growth: true, icon: Search },
-  { label: 'Loading speed optimization', starter: false, growth: true, icon: Gauge },
   { label: 'SSL certificate included', starter: true, growth: true, icon: Lock },
   { label: 'Domain included', starter: true, growth: true, icon: Globe },
+  { label: 'WhatsApp & direct calls', starter: false, growth: true, icon: MessageCircle },
+  { label: 'Loading speed optimization', starter: false, growth: true, icon: Gauge },
 ]
 
 function FeatureRow({ icon: Icon, label, value, included }) {
@@ -41,6 +43,28 @@ function FeatureRow({ icon: Icon, label, value, included }) {
 
 export default function DemoBanner() {
   const [modalOpen, setModalOpen] = useState(false)
+  const [loadingPlan, setLoadingPlan] = useState(null)
+
+  const handleCheckout = async (plan) => {
+    setLoadingPlan(plan)
+    try {
+      const res = await fetch(CHECKOUT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submission_id: SUBMISSION_ID, plan }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        console.error('Checkout error:', data)
+        setLoadingPlan(null)
+      }
+    } catch (err) {
+      console.error('Checkout error:', err)
+      setLoadingPlan(null)
+    }
+  }
 
   return (
     <div className="dark">
@@ -98,18 +122,18 @@ export default function DemoBanner() {
                     <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Starter</div>
                     <div className="flex items-baseline gap-1 mb-1">
                       <span className="text-3xl sm:text-4xl font-black text-white">89&euro;</span>
-                      <span className="text-zinc-500">/ month</span>
+                      <span className="text-zinc-500">/month</span>
                     </div>
-                    <div className="text-sm sm:text-base text-zinc-500 mb-4 sm:mb-5">199&euro; setup</div>
+                    <div className="inline-flex items-center py-1 mb-4">
+                      <span className="text-xs tracking-wider font-medium px-1.5 py-0.5 rounded-full" style={{backgroundColor: `rgba(${ACCENT_RGB}, 0.15)`, color: ACCENT }}>+100&euro; <span className='opacity-50'> setup (one-time)</span></span>
+                    </div>
                     <div className="space-y-2.5 sm:space-y-3 mb-5 sm:mb-6">
                       {features.map((f) => (
                         <FeatureRow key={f.label} icon={f.icon} label={f.label} value={f.starter} included={f.starter} />
                       ))}
                     </div>
-                    <Button variant="outline" asChild className="w-full rounded-full border-white/10 text-white hover:bg-white/5 mt-auto">
-                      <a href={`${CHECKOUT_URL}&plan=starter`} rel="noopener noreferrer">
-                        Choose Starter
-                      </a>
+                    <Button variant="outline" disabled={loadingPlan === 'starter'} onClick={() => handleCheckout('starter')} className="w-full h-11 rounded-full border-white/10 text-white hover:bg-white/5 mt-auto text-base font-semibold">
+                      {loadingPlan === 'starter' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Choose Starter'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -121,46 +145,46 @@ export default function DemoBanner() {
                     <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: ACCENT }}>Growth</div>
                     <div className="flex items-baseline gap-1 mb-1">
                       <span className="text-3xl sm:text-4xl font-black text-white">119&euro;</span>
-                      <span className="text-zinc-500">/ month</span>
+                      <span className="text-zinc-500">/month</span>
                     </div>
-                    <div className="text-sm sm:text-base text-zinc-500 mb-4 sm:mb-5">199&euro; setup</div>
+
+                    <div className="inline-flex items-center py-1 mb-4">
+                      <span className="text-xs tracking-wider font-medium px-1.5 py-0.5 rounded-full" style={{backgroundColor: `rgba(${ACCENT_RGB}, 0.15)`, color: ACCENT }}>+100&euro; <span className='opacity-50'> setup (one-time)</span></span>
+                    </div>
+
                     <div className="space-y-2.5 sm:space-y-3 mb-5 sm:mb-6">
                       {features.map((f) => (
                         <FeatureRow key={f.label} icon={f.icon} label={f.label} value={f.growth} included={f.growth} />
                       ))}
                     </div>
-                    <a href={`${CHECKOUT_URL}&plan=growth`} rel="noopener noreferrer" className="mt-auto block">
-                      <ShimmerButton className="w-full font-semibold text-base" background={ACCENT} shimmerColor="rgba(0,0,0,0.2)">
-                        <span className="flex items-center gap-2" style={{ color: '#000' }}>
-                          Choose Growth
-                          <ArrowRight className="w-5 h-5" />
-                        </span>
-                      </ShimmerButton>
-                    </a>
+                    <ShimmerButton disabled={loadingPlan === 'growth'} onClick={() => handleCheckout('growth')} className="w-full h-11 font-semibold text-base mt-auto" background={ACCENT} shimmerColor="rgba(0,0,0,0.2)">
+                      <span className="flex items-center gap-2" style={{ color: '#000' }}>
+                        {loadingPlan === 'growth' ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Choose Growth<ArrowRight className="w-5 h-5" /></>}
+                      </span>
+                    </ShimmerButton>
                   </CardContent>
                 </Card>
               </div>
               <div className="relative rounded-2xl mb-5 sm:mb-8 overflow-hidden border border-white/[0.06]" style={{ background: `linear-gradient(135deg, rgba(${ACCENT_RGB},0.06) 0%, transparent 60%)` }}>
                 <DotPattern className="[mask-image:radial-gradient(ellipse_at_center,white_10%,transparent_70%)]" cr={0.8} width={20} height={20} />
-                <BorderBeam size={200} duration={10} delay={3} colorFrom={ACCENT} colorTo="white" />
                 <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 p-5 sm:p-6">
-                  <Sparkles className="w-5 h-5 flex-shrink-0 hidden sm:block" style={{ color: ACCENT }} />
+                  <Zap className="w-5 h-5 flex-shrink-0 hidden sm:block" style={{ color: ACCENT }} />
                   <div className="flex-1 min-w-0 text-center sm:text-left">
-                    <h3 className="text-sm font-semibold text-white">Need a custom website?</h3>
+                    <h3 className="text-sm font-semibold text-white">Need a custom complex website?</h3>
                     <p className="text-xs text-zinc-400 mt-0.5">Unique design, complex integrations, or advanced features — call us and let's talk.</p>
                   </div>
-                  <a href="tel:+40757289370" className="flex-shrink-0">
-                    <ShimmerButton className="text-sm" background="rgba(0,0,0,0.8)" shimmerColor={ACCENT}>
+                  <a href="mailto:contact@siteo.digital" className="flex-shrink-0">
+                    <ShimmerButton className="text-sm" background="rgba(0,0,0,1)" shimmerColor={ACCENT}>
                       <span className="flex items-center gap-2 text-white whitespace-nowrap">
-                        <Phone className="w-4 h-4" />
-                        +40 757 289 370
+                        <Mail className="w-4 h-4" />
+                        contact@siteo.digital
                       </span>
                     </ShimmerButton>
                   </a>
                 </div>
               </div>
 
-              <Card className="rounded-2xl border-white/[0.06] bg-white/[0.02] mb-5 sm:mb-8 overflow-hidden">
+              <Card className="rounded-2xl border-white/[0.06] bg-white/[0.02] overflow-hidden">
                 <CardContent className="p-0">
                   <div className="grid grid-cols-3 text-center text-xs font-semibold uppercase tracking-wider py-3 px-4 border-b border-white/5">
                     <div className="text-left text-zinc-500">Why choose<span style={{ color: ACCENT }}> us?</span></div>
@@ -191,19 +215,15 @@ export default function DemoBanner() {
                       </div>
                     </div>
                   ))}
-                  <div className="py-3 px-4 border-t border-white/5 text-center">
-                    <span className="text-sm text-emerald-400 font-medium">You save 1,300€+ per year</span>
+                  <div className="py-4 px-4 border-t border-white/5 flex justify-center">
+                    <div className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-1.5 backdrop-blur-sm">
+                      <AnimatedShinyText className="text-sm font-semibold text-emerald-400" shimmerWidth={120} shimmerColor="rgba(167,243,208,0.9)">
+                        You save 1,300€+ per year
+                      </AnimatedShinyText>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <div className="text-center">
-                <p className="text-zinc-500 text-base">
-                  Questions? Call us directly at{' '}
-                  <Button variant="link" asChild className="p-0 h-auto font-medium" style={{ color: ACCENT }}>
-                    <a href="tel:0746294445">0746 294 445</a>
-                  </Button>
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
